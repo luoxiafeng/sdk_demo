@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}新增任务{% endblock %}
+
+{% block content %}
+<div class="container">
+    <form>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="task_id" class="form-label">任务编号</label>
+                <input type="text" class="form-control" id="task_id" value="001" readonly>
+            </div>
+            <div class="col-md-6">
+                <label for="task_description" class="form-label">任务描述</label>
+                <input type="text" class="form-control" id="task_description" placeholder="这是一个描述">
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="video_source" class="form-label">视频源</label>
+                <select class="form-select" id="video_source">
+                    {% for source in video_sources %}
+                    <option>{{ source }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="work_plan" class="form-label">工作计划</label>
+                <select class="form-select" id="work_plan">
+                    <option>默认模板</option>
+                    <option>模板1</option>
+                    <option>模板2</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="report_address" class="form-label">上报地址</label>
+                <input type="text" class="form-control" id="report_address">
+            </div>
+            <div class="col-md-6">
+                <label for="national_channel_id" class="form-label">国标通道编号</label>
+                <input type="text" class="form-control" id="national_channel_id">
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <h5>算法设置</h5>
+            <div class="row">
+                {% for algorithm in algorithms %}
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="{{ algorithm }}">
+                        <label class="form-check-label" for="{{ algorithm }}">
+                            {{ algorithm }}
+                        </label>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary">保存</button>
+            <button type="button" class="btn btn-secondary ms-2" data-bs-dismiss="modal">取消</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

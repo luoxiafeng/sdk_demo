@@ -17,8 +17,8 @@
             <ul class="list-unstyled px-2">
                 <li><a href="/" class="text-light d-block py-2">基本信息</a></li>
                 <li><a href="#" id="channel-management-link" class="text-light d-block py-2">通道管理</a></li>
-                <li><a href="#" class="text-light d-block py-2">任务管理</a></li>
-                <li><a href="#" class="text-light d-block py-2">实时预览</a></li>
+                <li><a href="#" id="task-management-link" class="text-light d-block py-2">任务管理</a></li>
+                <li><a href="#" id="live-preview-link" class="text-light d-block py-2">实时预览</a></li>
                 <li><a href="#" class="text-light d-block py-2">告警管理</a></li>
                 <li><a href="#" class="text-light d-block py-2">网络管理</a></li>
                 <li><a href="#" class="text-light d-block py-2">参数设置</a></li>
@@ -46,10 +46,26 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // JavaScript 事件，点击“通道管理”跳转
-        document.getElementById('channel-management-link').addEventListener('click', function() {
-            window.location.href = "/channel_management";
+        document.addEventListener('DOMContentLoaded', function() {
+            // 处理侧边栏的跳转
+            document.getElementById('channel-management-link').addEventListener('click', function() {
+                window.location.href = "/channel_management";
+            });
+    
+            document.getElementById('task-management-link').addEventListener('click', function() {
+                window.location.href = "/task_management";
+            });
+    
+            document.getElementById('add-task-button').addEventListener('click', function() {
+                window.location.href = "/task_management/add";
+            });
+    
+            // 新增实时预览的跳转
+            document.getElementById('live-preview-link').addEventListener('click', function() {
+                window.location.href = "/live_preview";
+            });
         });
     </script>
+    
 </body>
 </html>
