@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}参数配置{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h5>参数配置</h5>
+    <button class="btn btn-primary">添加参数</button>
+</div>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>参数标识</th>
+            <th>类型</th>
+            <th>参数值</th>
+            <th>参数描述</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for parameter in parameters %}
+        <tr>
+            <td>{{ parameter.id }}</td>
+            <td><span class="badge bg-secondary">{{ parameter.type }}</span></td>
+            <td>{{ parameter.value }}</td>
+            <td>{{ parameter.description }}</td>
+            <td>
+                <button class="btn btn-secondary btn-sm">编辑</button>
+                <button class="btn btn-danger btn-sm">删除</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

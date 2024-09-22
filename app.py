@@ -73,5 +73,53 @@ def live_preview():
     
     return render_template('live_preview.html', cameras=cameras)
 
+@app.route('/alarm_management')
+def alarm_management():
+    alarms = [
+        {
+            'id': '06',
+            'video_channel': '02',
+            'alarm_date': '2024-07-09 10:03:33',
+            'report_address': 'http://192.168.1.106:5201/receive',
+            'report_status': '上传失败',
+            'alarm_content': '未佩戴口罩',
+            'image_url': 'path_to_image1.jpg'
+        },
+        {
+            'id': '06',
+            'video_channel': '02',
+            'alarm_date': '2024-07-09 09:35:06',
+            'report_address': 'http://192.168.1.106:5201/receive',
+            'report_status': '上传失败',
+            'alarm_content': '未佩戴口罩',
+            'image_url': 'path_to_image2.jpg'
+        },
+        {
+            'id': '06',
+            'video_channel': '02',
+            'alarm_date': '2024-07-09 09:33:36',
+            'report_address': 'http://192.168.1.106:5201/receive',
+            'report_status': '上传失败',
+            'alarm_content': '未佩戴口罩',
+            'image_url': 'path_to_image3.jpg'
+        }
+    ]
+    
+    return render_template('alarm_management.html', alarms=alarms)
+
+@app.route('/parameter_settings')
+def parameter_settings():
+    parameters = [
+        {'id': 'AlarmSignalSec', 'type': '系统参数', 'value': '3', 'description': '物理告警信号输出持续时间(默认3秒)'},
+        {'id': 'AudioVolume', 'type': '系统参数', 'value': '100', 'description': '系统音量（默认80,0~100）'},
+        {'id': 'DimOfAlarmImage', 'type': '系统参数', 'value': '1', 'description': '告警图片尺寸大小（0宽高640×360,1原始相机尺寸，默认0）'},
+        {'id': 'EnableAlarmNotification', 'type': '系统参数', 'value': '1', 'description': '是否开启网页告警通知(默认0,不开启)'},
+        {'id': 'EnableAlarmSignal', 'type': '系统参数', 'value': '1', 'description': '是否开启物理OUT1告警信号(默认1,开启)'},
+        {'id': 'EnableAlarmVoice', 'type': '系统参数', 'value': '1', 'description': '是否开启语音报警（需要手动添加语音音包，默认0不开启）'}
+    ]
+    
+    return render_template('parameter_settings.html', parameters=parameters)
+
+
 if __name__ == '__main__':
     app.run(debug=True)

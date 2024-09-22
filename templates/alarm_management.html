@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}告警管理{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h5>告警管理</h5>
+</div>
+
+<!-- 搜索表单 -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <label for="alarm_task" class="form-label">告警任务</label>
+        <select class="form-select" id="alarm_task">
+            <option>请选择</option>
+            <option>任务1</option>
+            <option>任务2</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="video_channel" class="form-label">视频通道</label>
+        <select class="form-select" id="video_channel">
+            <option>请选择</option>
+            <option>通道1</option>
+            <option>通道2</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="alarm_content" class="form-label">告警内容</label>
+        <select class="form-select" id="alarm_content">
+            <option>请选择</option>
+            <option>告警内容1</option>
+            <option>告警内容2</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="alarm_date" class="form-label">告警日期</label>
+        <input type="date" class="form-control" id="alarm_date">
+    </div>
+</div>
+
+<!-- 告警卡片 -->
+<div class="row">
+    {% for alarm in alarms %}
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <img src="{{ alarm.image_url }}" class="card-img-top" alt="告警图像">
+            <div class="card-body">
+                <h5 class="card-title">告警任务: {{ alarm.id }}</h5>
+                <p class="card-text">视频通道: {{ alarm.video_channel }}</p>
+                <p class="card-text">告警日期: {{ alarm.alarm_date }}</p>
+                <p class="card-text">上报地址: {{ alarm.report_address }}</p>
+                <p class="card-text">
+                    <span class="badge bg-danger">{{ alarm.report_status }}</span>
+                </p>
+                <p class="card-text">
+                    <span class="badge bg-warning">{{ alarm.alarm_content }}</span>
+                </p>
+                <a href="#" class="btn btn-primary">详情</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
