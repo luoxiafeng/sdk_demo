@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}通道管理{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h5>通道管理</h5>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addChannelModal">新增</button>
+</div>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>相机编号</th>
+            <th>视频地址</th>
+            <th>通道状态</th>
+            <th>国标通道编号</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for channel in channels %}
+        <tr>
+            <td>{{ channel.camera_id }}</td>
+            <td>{{ channel.video_url }}</td>
+            <td>
+                {% if channel.status == '正常' %}
+                <span class="badge bg-success">{{ channel.status }}</span>
+                {% elif channel.status == '连接视频失败' %}
+                <span class="badge bg-warning">{{ channel.status }}</span>
+                {% else %}
+                <span class="badge bg-danger">{{ channel.status }}</span>
+                {% endif %}
+            </td>
+            <td>{{ channel.national_channel_id }}</td>
+            <td>
+                <button class="btn btn-secondary btn-sm">编辑</button>
+                <button class="btn btn-danger btn-sm">删除</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- 新增通道模态框 -->
+<div class="modal fade" id="addChannelModal" tabindex="-1" aria-labelledby="addChannelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addChannelModalLabel">新增通道</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>CH</th>
+                            <th>NAME</th>
+                            <th>URL</th>
+                            <th>AI Algorithm</th>
+                            <th>STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in range(1, 17) %}
+                        <tr>
+                            <td>{{ i }}</td>
+                            <td><input type="text" class="form-control" placeholder="Enter Name"></td>
+                            <td><input type="text" class="form-control" placeholder="Enter URL"></td>
+                            <td>
+                                <select class="form-select">
+                                    <option>None</option>
+                                    <option>Human - Normal</option>
+                                    <option>Face Recognition</option>
+                                    <option>LPR - US (Faster)</option>
+                                    <option>Fallen Person Detector</option>
+                                </select>
+                            </td>
+                            <td><input type="text" class="form-control" placeholder="Status" readonly></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary">APPLY</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCEL</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}基本信息{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">设备信息</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>设备标识:</strong> {{ device_info.device_id }}</p>
+                <p><strong>资源信息:</strong> 存储空间 {{ device_info.storage_space }} / 芯片温度 {{ device_info.chip_temperature }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>授权状态:</strong> {{ device_info.status }}</p>
+                <p><strong>系统版本:</strong> {{ device_info.system_version }}</p>
+                <p><strong>软件版本:</strong> {{ device_info.software_version }}</p>
+                <p><strong>盒子时间:</strong> {{ device_info.box_time }}</p>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <button class="btn btn-primary">更新指纹</button>
+            </div>
+            <div class="col-md-6">
+                <button class="btn btn-secondary">更新版本</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12 text-center">
+        <button class="btn btn-success">同步时间</button>
+        <button class="btn btn-warning">重启服务</button>
+        <button class="btn btn-danger">重启设备</button>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row">
+    <div class="col-md-6">
+        <canvas id="chipTempChart"></canvas>
+    </div>
+    <div class="col-md-6">
+        <canvas id="cpuUsageChart"></canvas>
+    </div>
+    <div class="col-md-6 mt-4">
+        <canvas id="tpuUsageChart"></canvas>
+    </div>
+</div>
+{% endblock %}
