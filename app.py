@@ -122,4 +122,5 @@ def parameter_settings():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # 使应用可以在局域网内访问
+    app.run(host='0.0.0.0', port=5000, debug=True)
