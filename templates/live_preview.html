@@ -6,12 +6,14 @@
     <h5>实时预览</h5>
 </div>
 
+<!-- 视频地址表格 -->
 <table class="table table-bordered">
     <thead>
         <tr>
             <th>相机编号</th>
             <th>状态</th>
             <th>视频地址</th>
+            <th>九宫格编号</th>
             <th>操作</th>
         </tr>
     </thead>
@@ -26,12 +28,127 @@
                 <span class="badge bg-danger">{{ camera.status }}</span>
                 {% endif %}
             </td>
-            <td>{{ camera.video_url }}</td>
             <td>
-                <button class="btn btn-primary btn-sm">查看</button>
+                <input type="text" class="form-control video-url" id="video-url-{{ camera.id }}" value="{{ camera.video_url }}">
+            </td>
+            <td>
+                <select class="form-control grid-select" data-camera-id="{{ camera.id }}">
+                    <option value="">选择格子</option>
+                    {% for i in range(1, 10) %}
+                    <option value="{{ i }}">格子{{ i }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td>
+                <button class="btn btn-primary btn-sm view-btn" data-camera-id="{{ camera.id }}">查看</button>
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
+<!-- 九宫格视频播放 -->
+<div class="container">
+    <div class="row">
+        {% for i in range(1, 10) %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6>格子 {{ i }}</h6>
+                    <select class="form-control grid-camera-select" id="camera-select-{{ i }}">
+                        <option value="">选择相机</option>
+                        {% for camera in cameras %}
+                        <option value="{{ camera.id }}">{{ camera.id }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="card-body text-center">
+                    <img id="video-{{ i }}" class="img-fluid" src="" alt="视频流"/>
+                </div>
+                <div class="card-footer text-center">
+                    <button class="btn btn-success start-btn" data-grid-id="{{ i }}">开始</button>
+                    <button class="btn btn-danger stop-btn" data-grid-id="{{ i }}">停止</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    // 全局变量，用于存储每个摄像头的URL地址
+    var cameraUrls = {};
+
+    // 捕捉用户在表格中输入的视频流地址，并记录到 cameraUrls 中
+    document.querySelectorAll('.video-url').forEach(function(input) {
+        input.addEventListener('change', function() {
+            var cameraId = this.id.replace('video-url-', '');  // 获取摄像头ID
+            var videoUrl = this.value;  // 获取输入的视频流地址
+            cameraUrls[cameraId] = videoUrl;  // 记录到全局变量中
+        });
+    });
+
+    // 开始按钮功能：向后端发送请求，并在九宫格显示视频
+    document.querySelectorAll('.start-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+            var gridId = this.getAttribute('data-grid-id');
+            var cameraSelect = document.getElementById('camera-select-' + gridId);
+            var cameraId = cameraSelect.value;
+
+            if (cameraId && cameraUrls[cameraId]) {
+                var videoUrl = cameraUrls[cameraId];  // 从全局变量中获取视频流地址
+
+                // 发送请求到后端，启动视频流
+                fetch('/start-stream', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        camera_id: cameraId,
+                        grid_id: gridId,
+                        video_url: videoUrl
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 设置视频流的URL到对应的img标签
+                        document.getElementById('video-' + gridId).src = data.stream_url;
+                    } else {
+                        alert('无法开始播放视频');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            } else {
+                alert('请选择一个有效的相机编号并确保视频地址有效');
+            }
+        });
+    });
+
+    // 停止按钮功能
+    document.querySelectorAll('.stop-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+            var gridId = this.getAttribute('data-grid-id');
+            document.getElementById('video-' + gridId).src = ''; // 停止视频流
+        });
+    });
+
+    // 表格中的“查看”按钮
+    document.querySelectorAll('.view-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+            var cameraId = this.getAttribute('data-camera-id');
+            var gridSelect = document.querySelector('select[data-camera-id="' + cameraId + '"]');
+            var gridId = gridSelect.value;
+
+            if (gridId && cameraUrls[cameraId]) {
+                var videoUrl = cameraUrls[cameraId];
+                document.getElementById('video-' + gridId).src = videoUrl;
+            } else {
+                alert('请先选择一个九宫格编号和视频地址');
+            }
+        });
+    });
+</script>
+
 {% endblock %}
