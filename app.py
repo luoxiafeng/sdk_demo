@@ -66,13 +66,24 @@ def add_task():
 @app.route('/live_preview')
 def live_preview():
     cameras = [
-        {'id': '01', 'status': '在线', 'video_url': 'rtsp://192.168.1.101:554/live'},
-        {'id': '02', 'status': '在线', 'video_url': 'rtsp://192.168.1.102:554/live'},
-        {'id': '03', 'status': '离线', 'video_url': 'rtsp://192.168.1.103:554/live'},
-        {'id': '04', 'status': '在线', 'video_url': 'rtsp://192.168.1.104:554/live'},
+        {'id': '01', 'status': '在线', 'video_url': 'rtsp://192.168.57.16:8554/s10'},
+        {'id': '02', 'status': '在线', 'video_url': 'rtsp://192.168.57.16:8554/s10'},
+        {'id': '03', 'status': '离线', 'video_url': 'rtsp://192.168.57.16:8554/s10'},
+        {'id': '04', 'status': '在线', 'video_url': 'rtsp://192.168.57.16:8554/s10'},
     ]
     
     return render_template('live_preview.html', cameras=cameras)
+
+@app.route('/nine_tables')
+def nine_tables():
+    cameras = [
+        {'id': '01', 'status': '在线', 'video_url': 'rtsp://192.168.57.16:8554/s10'},
+        {'id': '02', 'status': '在线', 'video_url': 'rtsp://192.168.57.16:8554/s10'},
+        {'id': '03', 'status': '离线', 'video_url': 'rtsp://192.168.57.16:8554/s10'},
+        {'id': '04', 'status': '在线', 'video_url': 'rtsp://192.168.57.16:8554/s10'},
+    ]
+    
+    return render_template('nine_tables.html', cameras=cameras)
 
 @app.route('/alarm_management')
 def alarm_management():

@@ -19,6 +19,7 @@
                 <li><a href="#" id="channel-management-link" class="text-light d-block py-2">通道管理</a></li>
                 <li><a href="#" id="task-management-link" class="text-light d-block py-2">任务管理</a></li>
                 <li><a href="#" id="live-preview-link" class="text-light d-block py-2">实时预览</a></li>
+                <li><a href="#" id="9-preview-link" class="text-light d-block py-2">9宫格</a></li>
                 <li><a href="#" id="alarm-management-link" class="text-light d-block py-2">告警管理</a></li>
                 <li><a href="#" id="parameter-settings-link" class="text-light d-block py-2">参数配置</a></li>
                 <li><a href="#" class="text-light d-block py-2">网络配置</a></li>
@@ -59,7 +60,11 @@
             document.getElementById('live-preview-link').addEventListener('click', function() {
                 window.location.href = "/live_preview";
             });
-    
+            
+            document.getElementById('9-preview-link').addEventListener('click', function() {
+                window.location.href = "/nine_tables";
+            });
+
             document.getElementById('alarm-management-link').addEventListener('click', function() {
                 window.location.href = "/alarm_management";
             });
