@@ -135,9 +135,6 @@ def parameter_settings():
 # 全局变量，用于存储当前正在播放的视频流地址
 current_streams = {}
 
-# 全局变量，用于存储当前正在播放的视频流地址
-current_streams = {}
-
 # 根据给定的视频流地址生成视频帧
 def generate_frames(video_url):
     cap = cv2.VideoCapture(video_url)
@@ -155,10 +152,10 @@ def generate_frames(video_url):
     cap.release()
 
 # 动态路由，根据摄像头ID返回对应的视频流
-@app.route('/video/<camera_id>')
-def video(camera_id):
+@app.route('/video/<nine_grid_id>')
+def video(nine_grid_id):
     # 获取对应摄像头ID的RTSP流地址
-    video_url = current_streams.get(camera_id)
+    video_url = current_streams.get(nine_grid_id)
     if video_url:
         return Response(generate_frames(video_url), mimetype='multipart/x-mixed-replace; boundary=frame')
     else:
@@ -168,20 +165,20 @@ def video(camera_id):
 @app.route('/start-stream', methods=['POST'])
 def start_stream():
     data = request.get_json()
-    camera_id = data.get('camera_id')  # 获取摄像头ID
-    grid_id = data.get('grid_id')      # 获取九宫格编号（可用于前端展示）
+    nine_grid_id = data.get('nine_grid_id')  # 获取通道号
     video_url = data.get('video_url')  # 获取前端传递的视频流地址
 
-    # 检查是否有对应的摄像头ID和视频地址
-    if camera_id and video_url:
-        # 将摄像头ID与视频地址存储到全局字典中
-        current_streams[camera_id] = video_url
+    # 检查是否有对应的通道号和视频地址
+    if nine_grid_id and video_url:
+        # 将通道号与视频地址存储到全局字典中
+        current_streams[nine_grid_id] = video_url
 
         # 返回成功响应，并告知前端视频流的URL，可以用于动态设置img的src
-        return jsonify(success=True, stream_url=f'/video/{camera_id}')
+        return jsonify(success=True, stream_url=f'/video/{nine_grid_id}')
     else:
-        return jsonify(success=False, message='Invalid camera ID or video URL')
+        return jsonify(success=False, message='Invalid channel ID or video URL')
+
 
 if __name__ == '__main__':
     # 使应用可以在局域网内访问
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True,threaded=True)
