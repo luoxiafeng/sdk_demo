@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}实时预览{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h5>实时预览</h5>
+</div>
+
+<!-- 通道表格 -->
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>九宫格编号</th>
+            <th>状态</th>
+            <th>视频地址</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for camera in range(1, 10) %}
+        <tr>
+            <td>{{ camera }}</td>
+            <td>
+                <span class="badge bg-secondary" id="status-{{ camera }}">未知</span>
+            </td>
+            <td>
+                <input type="text" class="form-control video-url" id="video-url-{{ camera }}" placeholder="输入视频流地址">
+            </td>
+            <td>
+                <button class="btn btn-primary btn-sm view-btn" data-camera-id="{{ camera }}">查看</button>
+                <button class="btn btn-success btn-sm start-btn" data-camera-id="{{ camera }}">开始</button>
+                <button class="btn btn-danger btn-sm stop-btn" data-camera-id="{{ camera }}">停止</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- 九宫格视频播放区域，只保留img标签 -->
+<div class="container">
+    <div class="row">
+        {% for i in range(1, 10) %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <img id="video-{{ i }}" class="img-fluid" src="" alt="视频流" />
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    // 全局变量，用于存储每个通道的视频流地址
+    var nineGridUrls = {};
+
+    // 捕捉用户在表格中输入的视频流地址，并记录到 nineGridUrls 中
+    document.querySelectorAll('.video-url').forEach(function(input) {
+        input.addEventListener('change', function() {
+            var nineGridId = this.id.replace('video-url-', '');  // 获取九宫格ID
+            var videoUrl = this.value;  // 获取输入的视频流地址
+            nineGridUrls[nineGridId] = videoUrl;  // 记录到全局变量中
+            console.log("九宫格ID - URL", nineGridId, ":", videoUrl);  // 调试信息
+        });
+    });
+
+    // 点击“开始”按钮功能：向后端发送请求，并在九宫格显示视频
+    document.querySelectorAll('.start-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+            var nineGridId = this.getAttribute('data-camera-id'); // 九宫格ID
+            var videoUrl = nineGridUrls[nineGridId];  // 获取对应九宫格ID的视频地址
+
+            if (nineGridId && videoUrl) {
+                console.log("九宫格ID - URL", nineGridId, ":", videoUrl);  // 调试信息
+                // 发送请求到后端，启动视频流
+                fetch('/start-stream', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nine_grid_id: nineGridId,
+                        video_url: videoUrl
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 设置该九宫格ID对应九宫格的 img src
+                        document.getElementById('video-' + nineGridId).src = data.stream_url;
+                        document.getElementById('status-' + nineGridId).innerText = "在线";  // 更新状态
+                    } else {
+                        alert('无法开始播放视频');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            } else {
+                alert('请为该通道输入一个有效的视频地址');
+            }
+        });
+    });
+
+    // 停止按钮功能
+    document.querySelectorAll('.stop-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+            var nineGridId = this.getAttribute('data-camera-id');
+            var imgElement = document.getElementById('video-' + nineGridId);
+            imgElement.src = '';  // 停止当前通道的视频流
+            document.getElementById('status-' + nineGridId).innerText = "停止";  // 更新状态为停止
+            console.log("停止视频 - 通道", nineGridId);  // 调试信息
+        });
+    });
+
+    // 表格中的“查看”按钮
+    document.querySelectorAll('.view-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+            var nineGridId = this.getAttribute('data-camera-id');
+            var videoUrl = nineGridUrls[nineGridId];  // 从全局变量中获取对应通道的视频地址
+
+            if (videoUrl) {
+                alert("通道 " + nineGridId + " 当前视频地址：" + videoUrl);
+            } else {
+                alert('请先输入一个有效的视频地址');
+            }
+        });
+    });
+</script>
+
+{% endblock %}

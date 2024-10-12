@@ -25,20 +25,12 @@
                 <li><a href="#" class="text-light d-block py-2">网络配置</a></li>
                 <li><a href="#" class="text-light d-block py-2">计划模板</a></li>
                 <li><a href="#" class="text-light d-block py-2">其他配置</a></li>
+                <a href="http://127.0.0.1:8888" target="_blank">SSH远程登陆</a>
             </ul>
         </nav>
 
         <!-- 页面内容 -->
         <div id="content" class="p-4" style="margin-left: 200px;">
-            <nav class="navbar navbar-expand-lg navbar-light bg-light">
-                <div class="container-fluid">
-                    <span class="navbar-text">Admin</span>
-                    <button type="button" id="sidebarCollapse" class="btn btn-info">
-                        <i class="fas fa-align-left"></i>
-                    </button>
-                </div>
-            </nav>
-
             <div class="container">
                 {% block content %}{% endblock %}
             </div>
@@ -69,9 +61,13 @@
                 window.location.href = "/alarm_management";
             });
     
-            // 新增参数配置的跳转
             document.getElementById('parameter-settings-link').addEventListener('click', function() {
                 window.location.href = "/parameter_settings";
+            });
+
+            // 新增远程SSH登录的跳转
+            document.getElementById('ssh-link').addEventListener('click', function() {
+                window.location.href = "/ssh_login";
             });
         });
     </script>
