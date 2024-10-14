@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "bp_event": "^1.2.0",
+    "bp_logger": "^1.1.1",
+    "bp_statemachine": "^1.0.14",
+    "streamedian": "github:Streamedian/html5_rtsp_player"
+  }
+}
