@@ -3,45 +3,71 @@
 
 {% block content %}
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>通道号</th>
-            <th>摄像头名称</th>
-            <th>视频地址</th>
-            <th>通道状态</th>
-            <th>国标通道编号</th>
-            <th>操作</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for i in range(1, 17) %}
-        <tr>
-            <td>{{ i }}</td>
-            <td><input type="text" class="form-control" placeholder="输入摄像头名称" disabled></td>
-            <td><input type="text" class="form-control" placeholder="输入视频地址" value="{{ channels[i-1].video_url if channels|length >= i else '' }}" disabled></td>
-            <td>
-                {% if channels|length >= i %}
-                    {% if channels[i-1].status == '正常' %}
-                    <span class="badge bg-success">{{ channels[i-1].status }}</span>
-                    {% elif channels[i-1].status == '连接视频失败' %}
-                    <span class="badge bg-warning">{{ channels[i-1].status }}</span>
-                    {% else %}
-                    <span class="badge bg-danger">{{ channels[i-1].status }}</span>
-                    {% endif %}
-                {% endif %}
-            </td>
-            <td>{{ channels[i-1].national_channel_id if channels|length >= i else '' }}</td>
-            <td>
-                <button class="btn btn-primary btn-sm modify-btn">修改</button>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="table-responsive">
+    <div style="display: flex;">
+        <table class="table table-bordered" id="channelNumberTable" style="width: 100px;">
+            <thead>
+                <tr>
+                    <th>通道号</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in range(1, 17) %}
+                <tr>
+                    <td class="fixed-channel">{{ i }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <table class="table table-bordered" id="channelDataTable" style="flex-grow: 1;">
+            <thead>
+                <tr>
+                    <th>摄像头名称</th>
+                    <th>视频地址</th>
+                    <th>通道状态</th>
+                    <th>国标通道编号</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in range(1, 17) %}
+                <tr>
+                    <td><input type="text" class="form-control" placeholder="输入摄像头名称" disabled></td>
+                    <td><input type="text" class="form-control" placeholder="输入视频地址" disabled></td>
+                    <td></td>
+                    <td>{{ channels[i-1].national_channel_id if channels|length >= i else '' }}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm modify-btn">修改</button>
+                        <button class="btn btn-secondary btn-sm move-up" title="向上移动">↑</button>
+                        <button class="btn btn-secondary btn-sm move-down" title="向下移动">↓</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 提交按钮 -->
+<div style="text-align: center; margin-top: 20px;">
+    <button id="submitButton" class="btn btn-success">提交所有数据</button>
+</div>
+
+<style>
+    .move-up, .move-down {
+        background-color: green; /* 设置背景颜色为绿色 */
+        color: white; /* 设置文字颜色为白色 */
+    }
+</style>
+
+<!-- 引入 jQuery 和 jQuery UI -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
+    $(document).ready(function() {
+        // 处理修改按钮的功能
         const modifyButtons = document.querySelectorAll('.modify-btn');
         
         modifyButtons.forEach(button => {
@@ -54,8 +80,99 @@
                     inputs[0].focus();
                     this.textContent = '保存';
                 } else {
+                    // 保存视频地址并检测状态
+                    const videoUrl = inputs[1].value;
+                    if (videoUrl) {
+                        checkVideoStatus(videoUrl, row);
+                    } else {
+                        // 如果视频地址为空，则通道状态为空
+                        row.cells[2].innerHTML = '';
+                    }
                     inputs.forEach(input => input.disabled = true);
                     this.textContent = '修改';
+                }
+            });
+        });
+
+        // 向上移动行
+        $('.move-up').click(function() {
+            const row = $(this).closest('tr');
+            const prevRow = row.prev();
+            if (prevRow.length) {
+                row.insertBefore(prevRow);
+                updateChannelNumbers();
+            }
+        });
+
+        // 向下移动行
+        $('.move-down').click(function() {
+            const row = $(this).closest('tr');
+            const nextRow = row.next();
+            if (nextRow.length) {
+                row.insertAfter(nextRow);
+                updateChannelNumbers();
+            }
+        });
+
+        // 更新通道号
+        function updateChannelNumbers() {
+            $('#channelNumberTable tbody tr').each(function(index) {
+                $(this).find('.fixed-channel').text(index + 1);
+            });
+        }
+
+        // 检测视频状态
+        function checkVideoStatus(videoUrl, row) {
+            $.ajax({
+                url: '/check_video_status', // 后端API地址
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ url: videoUrl }),
+                success: function(response) {
+                    // 根据返回的状态更新通道状态
+                    if (response.status === 'network') {
+                        row.cells[2].innerHTML = '<span class="badge bg-danger">网络不通</span>';
+                    } else if (response.status === 'no_stream') {
+                        row.cells[2].innerHTML = '<span class="badge bg-warning">无码流</span>';
+                    } else {
+                        row.cells[2].innerHTML = '<span class="badge bg-success">正常</span>';
+                    }
+                },
+                error: function() {
+                    row.cells[2].innerHTML = '<span class="badge bg-danger">检测失败</span>';
+                }
+            });
+        }
+
+        // 提交所有数据
+        $('#submitButton').click(function() {
+            const channelData = [];
+            $('#channelDataTable tbody tr').each(function(index) {
+                const inputs = $(this).find('input[type="text"]');
+                const cameraName = inputs[0].value;
+                const videoUrl = inputs[1].value;
+                const status = $(this).find('td:nth-child(3)').text().trim();
+                const channelNumber = index + 1; // 获取通道号
+
+                channelData.push({
+                    channelNumber: channelNumber, // 添加通道号
+                    cameraName: cameraName,
+                    videoUrl: videoUrl,
+                    status: status
+                });
+            });
+
+            // 发送数据到后台
+            $.ajax({
+                url: '/submit_channels', // 后端API地址
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(channelData),
+                success: function(response) {
+                    alert('数据提交成功！');
+                },
+                error: function() {
+                    alert('数据提交失败！');
                 }
             });
         });

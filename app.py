@@ -2,16 +2,28 @@ import cv2
 import time
 import os
 import sys
+import subprocess
+import requests
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, Response
 from functools import wraps
 from multiprocessing import Process,set_start_method
-
+from flask_sqlalchemy import SQLAlchemy
 sys.path.append(os.path.abspath('webssh/webssh'))
 from main import make_handlers, make_app, app_listen, ssh_main
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///channels.db'  # 使用 SQLite 数据库
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # 可选，关闭修改追踪
+db = SQLAlchemy(app)
 
+class Channel(db.Model):
+    __tablename__ = 'channels'
+
+    channel_number = db.Column(db.Integer, primary_key=True)
+    camera_name = db.Column(db.String(100))
+    video_url = db.Column(db.String(200))
+    status = db.Column(db.String(50))
 # 模拟用户数据库
 users = {'admin': 'password'}
 
@@ -222,6 +234,99 @@ def upload_file():
 
     return jsonify({'message': '文件上传成功'}), 200
 
+@app.route('/check_video_status', methods=['POST'])
+def check_video_status():
+    data = request.json
+    video_url = data.get('url')
+
+    # 检查码流
+    if check_stream(video_url):
+        return jsonify(status='normal')
+
+    # 如果没有码流，检查URL是否可访问
+    if is_url_accessible(video_url):
+        return jsonify(status='no_stream')
+    
+    return jsonify(status='network')
+
+def check_stream(video_url):
+    try:
+        # 使用ffmpeg命令检测码流
+        result = subprocess.run(
+            ['ffmpeg', '-i', video_url],
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE
+        )
+        output = result.stderr.decode('utf-8')
+
+        # 检查ffmpeg的返回码
+        if result.returncode == 0:
+            return True  # 成功获取流
+
+        # 检查输出中是否有有效的流信息
+        if "Invalid data" in output or "Could not find codec parameters" in output:
+            return False  # 无效流
+
+        # 根据输出的最后一行判断流的有效性
+        lines = output.strip().split('\n')
+        last_line = lines[-1]
+
+        if "Error" in last_line or "failed" in last_line:
+            return False  # 检测到错误
+
+        return True  # 默认返回为有效流
+
+    except Exception as e:
+        print(f"Error checking stream: {e}")
+        return False
+
+def is_url_accessible(url):
+    try:
+        response = requests.head(url, timeout=5)
+        return response.status_code == 200
+    except requests.ConnectionError:
+        print(f"Connection error for URL: {url}")
+        return False
+    except requests.Timeout:
+        print(f"Timeout error for URL: {url}")
+        return False
+    except requests.RequestException as e:
+        print(f"Request exception for URL: {url}, error: {e}")
+        return False
+
+@app.route('/submit_channels', methods=['POST'])
+def submit_channels():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': '无效数据'}), 400
+
+    for channel in data:
+        channel_number = channel.get('channelNumber')
+        camera_name = channel.get('cameraName')
+        video_url = channel.get('videoUrl')
+        status = channel.get('status')
+
+        existing_channel = Channel.query.get(channel_number)
+
+        if existing_channel:
+            existing_channel.camera_name = camera_name
+            existing_channel.video_url = video_url
+            existing_channel.status = status
+        else:
+            new_channel = Channel(
+                channel_number=channel_number,
+                camera_name=camera_name,
+                video_url=video_url,
+                status=status
+            )
+            db.session.add(new_channel)
+
+    try:
+        db.session.commit()
+        return jsonify({'message': '数据提交成功！'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 def run_ssh_main():
     ssh_main()
@@ -232,13 +337,15 @@ def run_flask_app():
     app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
 
 if __name__ == '__main__':
-    set_start_method('spawn')  # 确保在 Windows 上使用 spawn 方法
-    p1 = Process(target=run_ssh_main)
+    with app.app_context():  # 在应用上下文中创建表
+        db.create_all()  # 创建所有表
+    #set_start_method('spawn')  # 确保在 Windows 上使用 spawn 方法
+    #p1 = Process(target=run_ssh_main)
     p2 = Process(target=run_flask_app)
 
-    p1.start()
+    #p1.start()
     p2.start()
 
-    p1.join()
+    #p1.join()
     p2.join()
     
