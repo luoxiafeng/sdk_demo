@@ -334,7 +334,7 @@ def run_ssh_main():
 def run_flask_app():
     UPLOAD_FOLDER = 'uploads/'
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=5001, debug=False, threaded=True)
 
 if __name__ == '__main__':
     with app.app_context():  # 在应用上下文中创建表
