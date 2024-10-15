@@ -77,7 +77,11 @@ def channel_management():
 @app.route('/task_management')
 @login_required
 def task_management():
-    return render_template('task_management.html')
+    #tasks = Task.query.all()  # 获取所有任务
+    channels = Channel.query.all()  # 获取所有通道
+    #work_plans = WorkPlan.query.all()  # 获取所有执勤计划
+    return render_template('task_management.html', channels=channels)
+
 
 @app.route('/task_management/add', methods=['GET'])
 @login_required
