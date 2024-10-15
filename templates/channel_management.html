@@ -33,10 +33,16 @@
             <tbody>
                 {% for i in range(1, 17) %}
                 <tr>
-                    <td><input type="text" class="form-control" placeholder="输入摄像头名称" disabled></td>
-                    <td><input type="text" class="form-control" placeholder="输入视频地址" disabled></td>
+                    <td>
+                        <input type="text" class="form-control" placeholder="输入摄像头名称" 
+                               value="{{ channels[i-1].camera_name if channels|length >= i else '' }}" disabled>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control" placeholder="输入视频地址" 
+                               value="{{ channels[i-1].video_url if channels|length >= i else '' }}" disabled>
+                    </td>
                     <td></td>
-                    <td>{{ channels[i-1].national_channel_id if channels|length >= i else '' }}</td>
+                    <td>{{ channels[i-1].channel_number if channels|length >= i else '' }}</td>
                     <td>
                         <button class="btn btn-primary btn-sm modify-btn">修改</button>
                         <button class="btn btn-secondary btn-sm move-up" title="向上移动">↑</button>

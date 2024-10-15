@@ -70,7 +70,9 @@ def basic_info():
 @app.route('/channel_management')
 @login_required
 def channel_management():
-    return render_template('channel_management.html')
+    # 从数据库中获取所有通道
+    channels = Channel.query.all()
+    return render_template('channel_management.html', channels=channels)
 
 @app.route('/task_management')
 @login_required
