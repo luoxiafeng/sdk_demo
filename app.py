@@ -70,26 +70,12 @@ def basic_info():
 @app.route('/channel_management')
 @login_required
 def channel_management():
-    channels = [
-        {'camera_id': '005', 'video_url': 'rtsp://192.168.1.106:8554/test_stream', 'status': '连接视频失败', 'national_channel_id': '', 'operation': '编辑'},
-        {'camera_id': '01', 'video_url': 'rtsp://admin:passw0rd@192.168.1.103:554/Streaming/Channels/101', 'status': '正常', 'national_channel_id': '', 'operation': '编辑'},
-        {'camera_id': '02', 'video_url': 'rtsp://admin:passw0rd@192.168.1.103:554/Streaming/Channels/201', 'status': '正常', 'national_channel_id': '', 'operation': '编辑'},
-        {'camera_id': '03', 'video_url': 'rtsp://admin:passw0rd@192.168.1.103:554/Streaming/Channels/301', 'status': '视频流不存在', 'national_channel_id': '', 'operation': '编辑'},
-    ]
-    return render_template('channel_management.html', channels=channels)
+    return render_template('channel_management.html')
 
 @app.route('/task_management')
 @login_required
 def task_management():
-    tasks = [
-        {'task_id': '001', 'video_source': '02', 'report_address': '明烟明火检测, 口罩检测, 爬爬检测', 'algorithm_info': ['明烟明火检测', '口罩检测', '爬爬检测'], 'status': '未运行'},
-        {'task_id': '002', 'video_source': '02', 'report_address': '安全帽检测, 反光衣检测, 未穿长袖检测', 'algorithm_info': ['安全帽检测', '反光衣检测', '未穿长袖检测'], 'status': '未运行'},
-        {'task_id': '003', 'video_source': '02', 'report_address': '人员拥挤检测, 口罩检测, 反光衣检测', 'algorithm_info': ['人员拥挤检测', '口罩检测', '反光衣检测'], 'status': '未运行'},
-        {'task_id': '004', 'video_source': '02', 'report_address': '脸部抓拍, 打架检测, 街道垃圾检测', 'algorithm_info': ['脸部抓拍', '打架检测', '街道垃圾检测'], 'status': '未运行'},
-        {'task_id': '0045', 'video_source': '02', 'report_address': '越线检测, 安全帽检测, 反光衣检测', 'algorithm_info': ['越线检测', '安全帽检测', '反光衣检测'], 'status': '未运行'},
-        {'task_id': '006', 'video_source': '02', 'report_address': '倒地检测V2, 安全帽检测V3', 'algorithm_info': ['倒地检测V2', '安全帽检测V3'], 'status': '未运行'},
-    ]
-    return render_template('task_management.html', tasks=tasks)
+    return render_template('task_management.html')
 
 @app.route('/task_management/add', methods=['GET'])
 @login_required
