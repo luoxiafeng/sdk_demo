@@ -20,10 +20,10 @@
         <tr>
             <td>{{ i }}</td>
             <td>
-                <input type="text" class="form-control" id="task-name-{{ i }}" value="{{ tasks[i - 1].task_name if tasks|length >= i else '' }}" readonly>
+                <input type="text" class="form-control" value="{{ tasks[i - 1].task_name if tasks|length >= i else '' }}" readonly>
             </td>
             <td>
-                <select class="form-select" id="video-source-{{ i }}" style="width: 150px;" disabled>
+                <select class="form-select" style="width: 150px;" disabled>
                     <option value="">请选择视频源</option>
                     {% for channel in channels %}
                         <option value="{{ channel.channel_number }}" {% if channel.channel_number == (tasks[i - 1].video_source if tasks|length >= i else '') %}selected{% endif %}>
@@ -33,22 +33,25 @@
                 </select>
             </td>
             <td>
-                <input type="text" class="form-control" id="report-address-{{ i }}" value="{{ tasks[i - 1].report_address if tasks|length >= i else '' }}" readonly>
+                <input type="text" class="form-control" value="{{ tasks[i - 1].report_address if tasks|length >= i else '' }}" readonly>
             </td>
             <td>
+                <!-- 单次选择算法下拉列表，默认隐藏 -->
                 <select class="form-select algorithm-select" id="algorithm-select-{{ i }}" style="width: 150px; display: none;" onchange="updateAlgorithmConfig({{ i }}, this)">
                     <option value="">请选择算法</option>
                     {% for model in models %}
                         <option value="{{ model.id }}">{{ model.filename }}</option>
                     {% endfor %}
                 </select>
-                <div id="algorithm-config-{{ i }}" class="algorithm-config">{{ tasks[i - 1].algorithm_config if tasks|length >= i else '' }}</div>
+                
+                <!-- 用于显示选择的算法配置 -->
+                <div id="algorithm-config-{{ i }}" class="algorithm-config"></div>
             </td>
             <td>
                 <span class="badge bg-primary">{% if tasks|length >= i %}{{ tasks[i - 1].status }}{% else %}未开始{% endif %}</span>
             </td>
             <td>
-                <button class="btn btn-info btn-sm edit-button" data-row="{{ i }}">编辑</button>
+                <button class="btn btn-info btn-sm edit-button">编辑</button>
                 <button class="btn btn-success btn-sm">启动</button>
             </td>
         </tr>
@@ -60,29 +63,25 @@
     // 编辑按钮逻辑
     document.querySelectorAll('.edit-button').forEach(button => {
         button.addEventListener('click', function() {
-            const rowId = this.getAttribute('data-row');
+            const row = this.closest('tr');
+            const inputs = row.querySelectorAll('input, select');
             const isEditing = this.textContent === '保存';
+            const algorithmSelect = row.querySelector('.algorithm-select');
 
-            // 切换当前行的输入框和选择框的可编辑状态
-            const taskNameInput = document.getElementById(`task-name-${rowId}`);
-            const videoSourceSelect = document.getElementById(`video-source-${rowId}`);
-            const reportAddressInput = document.getElementById(`report-address-${rowId}`);
-            const algorithmSelect = document.getElementById(`algorithm-select-${rowId}`);
+            // 切换可编辑状态
+            inputs.forEach(input => {
+                if (input.tagName === 'INPUT') {
+                    input.readOnly = isEditing ? true : false;
+                }
+                if (input.tagName === 'SELECT' && !input.classList.contains('algorithm-select')) {
+                    input.disabled = isEditing ? true : false;
+                }
+            });
 
+            // 显示或隐藏算法选择下拉框
             if (isEditing) {
-                // 禁用所有输入框和选择框
-                taskNameInput.readOnly = true;
-                videoSourceSelect.disabled = true;
-                reportAddressInput.readOnly = true;
                 algorithmSelect.style.display = 'none';  // 隐藏算法下拉列表
-                
-                // 保存任务信息
-                saveTask(rowId);
             } else {
-                // 启用所有输入框和选择框
-                taskNameInput.readOnly = false;
-                videoSourceSelect.disabled = false;
-                reportAddressInput.readOnly = false;
                 algorithmSelect.style.display = 'block'; // 显示算法下拉列表
             }
 
@@ -106,37 +105,6 @@
 
         // 更新显示
         configDiv.textContent = currentConfig;
-    }
-
-    // 通过 AJAX 保存任务信息
-    function saveTask(rowId) {
-        const taskName = document.getElementById(`task-name-${rowId}`).value;
-        const videoSource = document.getElementById(`video-source-${rowId}`).value;
-        const reportAddress = document.getElementById(`report-address-${rowId}`).value;
-        const algorithmConfig = document.getElementById(`algorithm-config-${rowId}`).textContent;
-
-        const taskData = {
-            id: rowId,
-            task_name: taskName,
-            video_source: videoSource,
-            report_address: reportAddress,
-            algorithm_config: algorithmConfig
-        };
-
-        fetch('/save_task', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(taskData),
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('任务保存成功:', data);
-        })
-        .catch((error) => {
-            console.error('保存任务时发生错误:', error);
-        });
     }
 </script>
 
