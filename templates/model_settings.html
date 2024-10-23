@@ -1,130 +1,91 @@
-{% extends "base.html" %}
-{% block title %}任务管理{% endblock %}
+{% extends 'base.html' %}
 
 {% block content %}
+<div class="container" style="width: 100%;">
 
-<table class="table table-bordered align-middle">
-    <thead>
+    <!-- 定义2x1的表格布局 -->
+    <table style="width: 100%; height: 100%;">
         <tr>
-            <th style="width: 50px;">行号</th>
-            <th>任务名称</th>
-            <th>视频源</th>
-            <th>上报地址</th>
-            <th>算法设置</th>
-            <th>任务状态</th>
-            <th>操作</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for i in range(1, 17) %}
-        <tr>
-            <td>{{ i }}</td>
-            <td>
-                <input type="text" class="form-control" value="{{ tasks[i - 1].task_name if tasks|length >= i else '' }}" readonly>
-            </td>
-            <td>
-                <select class="form-select" style="width: 150px;" disabled>
-                    <option value="">请选择视频源</option>
-                    {% for channel in channels %}
-                        <option value="{{ channel.channel_number }}" {% if channel.channel_number == (tasks[i - 1].video_source if tasks|length >= i else '') %}selected{% endif %}>
-                            {{ channel.channel_number }} - {{ channel.camera_name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </td>
-            <td>
-                <input type="text" class="form-control" value="{{ tasks[i - 1].report_address if tasks|length >= i else '' }}" readonly>
-            </td>
-            <td>
-                <!-- 单次选择算法下拉列表，默认隐藏 -->
-                <select class="form-select algorithm-select" id="algorithm-select-{{ i }}" style="width: 150px; display: none;" onchange="updateAlgorithmConfig({{ i }}, this)">
-                    <option value="">请选择算法</option>
-                    {% for model in models %}
-                        <option value="{{ model.id }}">{{ model.filename }}</option>
-                    {% endfor %}
-                </select>
-                
-                <!-- 用于显示选择的算法配置 -->
-                <div id="algorithm-config-{{ i }}" class="algorithm-config"></div>
-            </td>
-            <td>
-                <span class="badge bg-primary">{% if tasks|length >= i %}{{ tasks[i - 1].status }}{% else %}未开始{% endif %}</span>
-            </td>
-            <td>
-                <button class="btn btn-info btn-sm edit-button">编辑</button>
-                <button class="btn btn-success btn-sm">启动</button>
+            <!-- 第一行，包含文件上传表单 -->
+            <td style="vertical-align: top;">
+                <form method="POST" action="/upload_model" enctype="multipart/form-data" style="display: flex; align-items: center;">
+                    <div class="form-group" style="margin-right: 10px;">
+                        <label for="fileUpload" class="sr-only">上传模型文件：</label>
+                        <input type="file" name="file" class="form-control-file" id="fileUpload" onchange="checkFile()">
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="uploadButton" disabled>上传</button>
+                </form>
             </td>
         </tr>
-        {% endfor %}
-    </tbody>
-</table>
 
+        <tr>
+            <!-- 第二行，包含数据库内容展示表格 -->
+            <td style="vertical-align: top;">
+                <table class="table" style="width: 100%; table-layout: fixed; margin-top: 20px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%; padding-left: 10px; padding-top: 15px; padding-bottom: 15px;">文件</th>
+                            <th style="width: 15%; padding: 15px;">涉及算法</th>
+                            <th style="width: 15%; padding: 15px;">版本日期</th>
+                            <th style="width: 35%; padding: 15px;">算法描述</th>
+                            <th style="width: 20%; padding: 15px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for model in models %}
+                        <tr>
+                            <td id="filename-{{ model.id }}" style="padding-left: 10px; padding-top: 15px; padding-bottom: 15px;">{{ model.filename }}</td>
+                            <td style="padding: 15px;">{{ model.algorithm }}</td>
+                            <td style="padding: 15px;">{{ model.upload_date }}</td>
+                            <td style="padding: 15px;">{{ model.description }}</td>
+                            <td style="padding: 15px;">
+                                <!-- 删除按钮 -->
+                                <form method="POST" action="/delete_model/{{ model.id }}" style="display:inline-block; margin-right: 5px;">
+                                    <button type="submit" class="btn btn-danger">删除</button>
+                                </form>
+
+                                <!-- 覆盖按钮 -->
+                                <form method="POST" action="/overwrite_model/{{ model.id }}" enctype="multipart/form-data" style="display:inline-block;">
+                                    <input type="file" name="file" class="form-control-file" id="overwriteFile-{{ model.id }}" style="display:none;" onchange="checkOverwriteFile({{ model.id }})">
+                                    <button type="button" class="btn btn-warning" onclick="document.getElementById('overwriteFile-{{ model.id }}').click();">覆盖</button>
+                                    <button type="submit" class="btn btn-success" id="overwriteButton-{{ model.id }}" disabled style="display: none;">确认上传</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<!-- JavaScript 检测文件选择并控制上传按钮 -->
 <script>
-    // 编辑按钮逻辑
-    document.querySelectorAll('.edit-button').forEach(button => {
-        button.addEventListener('click', function() {
-            const row = this.closest('tr');
-            const inputs = row.querySelectorAll('input, select');
-            const isEditing = this.textContent === '保存';
-            const algorithmSelect = row.querySelector('.algorithm-select');
-
-            // 切换可编辑状态
-            inputs.forEach(input => {
-                if (input.tagName === 'INPUT') {
-                    input.readOnly = isEditing ? true : false;
-                }
-                if (input.tagName === 'SELECT' && !input.classList.contains('algorithm-select')) {
-                    input.disabled = isEditing ? true : false;
-                }
-            });
-
-            // 显示或隐藏算法选择下拉框
-            if (isEditing) {
-                algorithmSelect.style.display = 'none';  // 隐藏算法下拉列表
-            } else {
-                algorithmSelect.style.display = 'block'; // 显示算法下拉列表
-            }
-
-            // 更新按钮文本
-            this.textContent = isEditing ? '编辑' : '保存';
-        });
-    });
-
-    // 更新算法配置：用户每次选择一个算法后，显示在配置单元格中
-    function updateAlgorithmConfig(rowId, selectElement) {
-        const selectedAlgorithm = selectElement.options[selectElement.selectedIndex].textContent;
-        const configDiv = document.getElementById(`algorithm-config-${rowId}`);
-
-        // 现有的算法配置
-        let currentConfig = configDiv.textContent.trim();
-        if (currentConfig) {
-            currentConfig += `, "${selectedAlgorithm}"`;
+    function checkFile() {
+        var fileInput = document.getElementById('fileUpload');
+        var uploadButton = document.getElementById('uploadButton');
+        if (fileInput.files.length > 0) {
+            uploadButton.disabled = false;  // 启用上传按钮
         } else {
-            currentConfig = `"${selectedAlgorithm}"`;
+            uploadButton.disabled = true;  // 禁用上传按钮
         }
+    }
 
-        // 更新显示
-        configDiv.textContent = currentConfig;
+    function checkOverwriteFile(modelId) {
+        var fileInput = document.getElementById('overwriteFile-' + modelId);
+        var overwriteButton = document.getElementById('overwriteButton-' + modelId);
+        var currentFileName = document.getElementById('filename-' + modelId).innerText.trim();
+        var selectedFileName = fileInput.files[0].name;
+
+        if (selectedFileName === currentFileName) {
+            overwriteButton.style.display = 'inline-block';  // 显示确认上传按钮
+            overwriteButton.disabled = false;  // 启用上传按钮
+        } else {
+            // 使用 alert 弹出错误消息框
+            alert('文件名不匹配，请选择与当前文件相同的文件进行覆盖！');
+            overwriteButton.style.display = 'none';  // 隐藏确认上传按钮
+        }
     }
 </script>
-
-<style>
-    .table {
-        table-layout: auto;
-        width: 100%;
-    }
-    .table th, .table td {
-        vertical-align: middle;
-    }
-    .form-control, .form-select {
-        width: 100%; /* 确保输入框和选择框宽度一致 */
-        box-sizing: border-box; /* 确保内边距不会影响宽度 */
-    }
-    .algorithm-config {
-        margin-top: 5px;
-        font-size: 12px;
-        color: #555;
-    }
-</style>
-
 {% endblock %}
