@@ -12,7 +12,7 @@
             <th>上报地址</th>
             <th>算法设置</th>
             <th>任务状态</th>
-            <th>操作</th>
+            <th style="width: 150px;">操作</th> <!-- 固定操作列宽度 -->
         </tr>
     </thead>
     <tbody>
@@ -23,10 +23,14 @@
                 <input type="text" class="form-control" id="task-name-{{ i }}" value="{{ tasks[i - 1].task_name if tasks|length >= i else '' }}" readonly>
             </td>
             <td>
-                <select class="form-select" id="video-source-{{ i }}" style="width: 150px;" disabled>
+                <!-- 可编辑的视频源单元格 -->
+                <div id="video-source-config-{{ i }}" class="video-source-config">
+                    {{ tasks[i - 1].video_source if tasks|length >= i else '' }}
+                </div>
+                <select class="form-select video-source-select" id="video-source-select-{{ i }}" style="width: 150px; display: none;">
                     <option value="">请选择视频源</option>
                     {% for channel in channels %}
-                        <option value="{{ channel.channel_number }}" {% if channel.channel_number == (tasks[i - 1].video_source if tasks|length >= i else '') %}selected{% endif %}>
+                        <option value="{{ channel.channel_number }} - {{ channel.camera_name }}" {% if channel.channel_number == (tasks[i - 1].video_source if tasks|length >= i else '') %}selected{% endif %}>
                             {{ channel.channel_number }} - {{ channel.camera_name }}
                         </option>
                     {% endfor %}
@@ -35,83 +39,139 @@
             <td>
                 <input type="text" class="form-control" id="report-address-{{ i }}" value="{{ tasks[i - 1].report_address if tasks|length >= i else '' }}" readonly>
             </td>
-            <td>
-                <select class="form-select algorithm-select" id="algorithm-select-{{ i }}" style="width: 150px; display: none;" onchange="updateAlgorithmConfig({{ i }}, this)">
-                    <option value="">请选择算法</option>
-                    {% for model in models %}
-                        <option value="{{ model.id }}">{{ model.filename }}</option>
-                    {% endfor %}
-                </select>
-                <div id="algorithm-config-{{ i }}" class="algorithm-config">{{ tasks[i - 1].algorithm_config if tasks|length >= i else '' }}</div>
+            <td id="algorithm-config-{{ i }}" contenteditable="false" class="algorithm-config">
+                {{ tasks[i - 1].algorithm_config if tasks|length >= i else '' }}
             </td>
             <td>
                 <span class="badge bg-primary">{% if tasks|length >= i %}{{ tasks[i - 1].status }}{% else %}未开始{% endif %}</span>
             </td>
-            <td>
-                <button class="btn btn-info btn-sm edit-button" data-row="{{ i }}">编辑</button>
-                <button class="btn btn-success btn-sm">启动</button>
+            <td class="action-buttons">
+                <div class="btn-group" role="group">
+                    <button class="btn btn-info btn-sm edit-button" data-row="{{ i }}">编辑</button>
+                    <button class="btn btn-success btn-sm">启动</button>
+                </div>
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 
+<!-- 悬浮的多选框，默认隐藏 -->
+<div id="algorithm-float-box" class="floating-box" style="display: none;">
+    <h4>选择算法</h4>
+    <div id="algorithm-checkboxes">
+        {% for model in models %}
+        <div>
+            <input type="checkbox" id="algorithm-{{ model.id }}" value="{{ model.filename }}" onclick="selectAlgorithm('{{ model.filename }}')">
+            <label for="algorithm-{{ model.id }}">{{ model.filename }}</label>
+        </div>
+        {% endfor %}
+    </div>
+    <button class="btn btn-primary" onclick="hideFloatingBox()">保存选择</button>
+    <button class="btn btn-danger" onclick="removeSelectedAlgorithm()">删除选择</button> <!-- 删除选择按钮 -->
+</div>
+
 <script>
+    let currentRowId = null;
+
+    // 显示悬浮的算法选择框
+    function showFloatingBox(rowId) {
+        currentRowId = rowId;
+        const floatingBox = document.getElementById('algorithm-float-box');
+        floatingBox.style.display = 'block';
+        floatingBox.style.position = 'fixed';  // 固定悬浮框的位置，避免影响页面布局
+        floatingBox.style.left = '50px';
+        floatingBox.style.top = '100px';
+        makeBoxDraggable(floatingBox);
+    }
+
+    // 隐藏悬浮的算法选择框
+    function hideFloatingBox() {
+        const floatingBox = document.getElementById('algorithm-float-box');
+        floatingBox.style.display = 'none';
+    }
+
+    // 选择算法并显示在当前单元格
+    function selectAlgorithm(algorithmName) {
+        const configDiv = document.getElementById(`algorithm-config-${currentRowId}`);
+        let currentConfig = configDiv.textContent.trim();
+        if (currentConfig) {
+            currentConfig += `, "${algorithmName}"`;
+        } else {
+            currentConfig = `"${algorithmName}"`;
+        }
+        configDiv.textContent = currentConfig;
+    }
+
+    // 删除选择的算法
+    function removeSelectedAlgorithm() {
+        const checkboxes = document.querySelectorAll('#algorithm-checkboxes input[type="checkbox"]');
+        const configDiv = document.getElementById(`algorithm-config-${currentRowId}`);
+        let selectedAlgorithms = configDiv.textContent.split(', ').map(alg => alg.replace(/\"/g, ''));  // 去掉引号并拆分
+
+        checkboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                const index = selectedAlgorithms.indexOf(checkbox.value);
+                if (index !== -1) {
+                    selectedAlgorithms.splice(index, 1);  // 删除选择
+                }
+                checkbox.checked = false;  // 重置复选框状态
+            }
+        });
+
+        configDiv.textContent = selectedAlgorithms.length > 0 ? selectedAlgorithms.map(alg => `"${alg}"`).join(', ') : '';
+    }
+
     // 编辑按钮逻辑
     document.querySelectorAll('.edit-button').forEach(button => {
         button.addEventListener('click', function() {
             const rowId = this.getAttribute('data-row');
             const isEditing = this.textContent === '保存';
 
-            // 切换当前行的输入框和选择框的可编辑状态
             const taskNameInput = document.getElementById(`task-name-${rowId}`);
-            const videoSourceSelect = document.getElementById(`video-source-${rowId}`);
+            const videoSourceSelect = document.getElementById(`video-source-select-${rowId}`);
+            const videoSourceConfig = document.getElementById(`video-source-config-${rowId}`);
             const reportAddressInput = document.getElementById(`report-address-${rowId}`);
-            const algorithmSelect = document.getElementById(`algorithm-select-${rowId}`);
+            const algorithmConfigCell = document.getElementById(`algorithm-config-${rowId}`);
 
             if (isEditing) {
-                // 禁用所有输入框和选择框
                 taskNameInput.readOnly = true;
-                videoSourceSelect.disabled = true;
                 reportAddressInput.readOnly = true;
-                algorithmSelect.style.display = 'none';  // 隐藏算法下拉列表
-                
-                // 保存任务信息
-                saveTask(rowId);
+                videoSourceSelect.style.display = 'none';
+                videoSourceConfig.style.display = 'block';
+                algorithmConfigCell.setAttribute('contenteditable', 'false');  // 禁用算法设置的编辑
+
+                hideFloatingBox();  // 点击保存时隐藏悬浮框
+                saveTask(rowId);  // 确保保存函数调用
             } else {
-                // 启用所有输入框和选择框
                 taskNameInput.readOnly = false;
-                videoSourceSelect.disabled = false;
                 reportAddressInput.readOnly = false;
-                algorithmSelect.style.display = 'block'; // 显示算法下拉列表
+                videoSourceSelect.style.display = 'block';
+                videoSourceConfig.style.display = 'none';
+                algorithmConfigCell.setAttribute('contenteditable', 'true');  // 启用算法设置的编辑
+
+                showFloatingBox(rowId);  // 点击编辑时显示悬浮框
             }
 
-            // 更新按钮文本
             this.textContent = isEditing ? '编辑' : '保存';
         });
     });
 
-    // 更新算法配置：用户每次选择一个算法后，显示在配置单元格中
-    function updateAlgorithmConfig(rowId, selectElement) {
-        const selectedAlgorithm = selectElement.options[selectElement.selectedIndex].textContent;
-        const configDiv = document.getElementById(`algorithm-config-${rowId}`);
+    // 实时更新视频源选择的文本内容
+    document.querySelectorAll('.video-source-select').forEach(select => {
+        select.addEventListener('change', function() {
+            const rowId = this.id.split('-').pop();
+            const selectedOptionText = this.options[this.selectedIndex].text;
+            const videoSourceConfig = document.getElementById(`video-source-config-${rowId}`);
 
-        // 现有的算法配置
-        let currentConfig = configDiv.textContent.trim();
-        if (currentConfig) {
-            currentConfig += `, "${selectedAlgorithm}"`;
-        } else {
-            currentConfig = `"${selectedAlgorithm}"`;
-        }
-
-        // 更新显示
-        configDiv.textContent = currentConfig;
-    }
+            videoSourceConfig.textContent = selectedOptionText;
+        });
+    });
 
     // 通过 AJAX 保存任务信息
     function saveTask(rowId) {
         const taskName = document.getElementById(`task-name-${rowId}`).value;
-        const videoSource = document.getElementById(`video-source-${rowId}`).value;
+        const videoSource = document.getElementById(`video-source-select-${rowId}`).options[document.getElementById(`video-source-select-${rowId}`).selectedIndex].text;
         const reportAddress = document.getElementById(`report-address-${rowId}`).value;
         const algorithmConfig = document.getElementById(`algorithm-config-${rowId}`).textContent;
 
@@ -138,6 +198,23 @@
             console.error('保存任务时发生错误:', error);
         });
     }
+
+    // 使悬浮框可以拖动
+    function makeBoxDraggable(box) {
+        let offsetX, offsetY;
+        box.onmousedown = function(event) {
+            offsetX = event.clientX - box.offsetLeft;
+            offsetY = event.clientY - box.offsetTop;
+            document.onmousemove = function(event) {
+                box.style.left = event.clientX - offsetX + 'px';
+                box.style.top = event.clientY - offsetY + 'px';
+            };
+            document.onmouseup = function() {
+                document.onmousemove = null;
+                document.onmouseup = null;
+            };
+        };
+    }
 </script>
 
 <style>
@@ -149,13 +226,26 @@
         vertical-align: middle;
     }
     .form-control, .form-select {
-        width: 100%; /* 确保输入框和选择框宽度一致 */
-        box-sizing: border-box; /* 确保内边距不会影响宽度 */
+        width: 100%;
+        box-sizing: border-box;
     }
-    .algorithm-config {
+    .algorithm-config, .video-source-config {
         margin-top: 5px;
         font-size: 12px;
         color: #555;
+    }
+    .floating-box {
+        background-color: #fff;
+        border: 1px solid #ccc;
+        padding: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+    }
+    .action-buttons {
+        white-space: nowrap;  /* 防止按钮换行 */
+    }
+    .btn-group .btn {
+        margin-right: 5px;
     }
 </style>
 
