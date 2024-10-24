@@ -13,18 +13,8 @@
 <div>
     <input  id="stream_url" value="rtsp://<your camera ip or URL>/path" size="36">
     <button id="set_new_url">Set</button>
-  <div class="custom-control custom-switch">
-  <input type="checkbox" id="continuous_recording">
-  <label class="custom-control-label" for="customSwitch1">Continuous recording</label>
-</div>
 <div>
     <p style="color:#808080">Enter your rtsp link to the stream, for example: "rtsp://192.168.57.16:8554/s10"</p>
-</div>
-
-<div>
-    <span style="color:#808080">Change video file length of the continuous recording</span>
-    <input id="continuous_file_length" type="range" min="10000" max="200000" value="180000" step="1000" style="width:40%;">
-    <p id="continuous_file_length_label">180sec.</p>
 </div>
 
 <div>
@@ -33,11 +23,6 @@
     <p id="event_file_length_label">180sec.</p>
 </div>
 
-<div>
-    <span style="color:#808080">Change buffer duration</span>
-    <input id="buffer_duration" type="range" min="10" max="200" style="width:40%;">
-    <p id="buffer_value">120sec.</p>
-</div>
 <canvas id="video_canvas" resize="true"></canvas>
 <video id="test_video" controls autoplay>
     <!--<source src="rtsp://192.168.10.205:554/ch01.264" type="application/x-rtsp">-->
@@ -244,8 +229,6 @@ To activate key, please, use the activation application that is placed:
             infoHandler: infHandler,
             dataHandler: dataHandler,
             videoFormatHandler: formatHandler,
-            continuousFileLength: 180000,
-            eventFileLength: 10000,
             canvas: 'video_canvas',
         };
 
@@ -253,12 +236,8 @@ To activate key, please, use the activation application that is placed:
         var html5Canvas  = document.getElementById("video_canvas");
         var urlButton    = document.getElementById("set_new_url");
         var urlEdit      = document.getElementById("stream_url");
-        var bufferRange  = document.getElementById("buffer_duration");
         var bufferValue  = document.getElementById("buffer_value");
-        var continuousRecording  = document.getElementById("continuous_recording");
         var eventRecording = document.getElementById("event_recording");
-        var continuousFileLength  = document.getElementById("continuous_file_length");
-        var continuousFileLengthLabel  = document.getElementById("continuous_file_length_label");
         var eventFileLength  = document.getElementById("event_file_length");
         var eventFileLengthLabel  = document.getElementById("event_file_length_label");
 
@@ -300,50 +279,12 @@ To activate key, please, use the activation application that is placed:
             });
         }
 
-        var updateRangeControls = function(){
-            bufferRange.value     =  player.bufferDuration;
-            bufferValue.innerHTML = bufferRange.value + "sec.";
-
-            continuousFileLength.value = player.continuousRecording.fileLength;
-            continuousFileLengthLabel.innerText = `${continuousFileLength.value / 1000} sec.`;
-
-            eventFileLength.value = player.eventRecording.fileLength;
-            event_file_length_label.innerText = `${eventFileLength.value / 1000} sec.`;
-        };
-
-        bufferRange.addEventListener('input', function(){
-            var iValue = parseInt(this.value, 10);
-            player.bufferDuration = iValue;
-            bufferValue.innerHTML = this.value + "sec.";
-        });
-
-        bufferRange.innerHTML = player.bufferDuration + "sec.";
-        updateRangeControls();
-
-        continuousRecording.addEventListener('change', function(event) {
-            player.continuousRecording.record(event.target.checked);
-            continuousFileLength.disabled = event.target.checked;
-        });
-
         eventRecording.addEventListener('click', function(event) {
             let state = !event.target.classList.contains('btn-recording');
             player.eventRecording.record(state);
             event.target.classList.toggle('btn-success');
             event.target.classList.toggle('btn-recording');
             event.target.innerText = state ? 'Stop recording': 'Start recording';
-            eventFileLength.disabled = state;
-        });
-
-        continuousFileLength.addEventListener('input', function(event) {
-            let milliseconds = parseInt(event.target.value, 10);
-            player.continuousRecording.fileLength = milliseconds;
-            continuousFileLengthLabel.innerText = `${milliseconds / 1000} sec.`;
-        });
-
-        eventFileLength.addEventListener('input', function(event) {
-            let milliseconds = parseInt(event.target.value, 10);
-            player.eventRecording.fileLength = milliseconds;
-            eventFileLengthLabel.innerText = `${milliseconds / 1000} sec.`;
         });
 
         urlButton.onclick = ()=> {
@@ -355,9 +296,6 @@ To activate key, please, use the activation application that is placed:
             player = null;
             html5Player.src = newSource;
             player = Streamedian.player("test_video", playerOptions);
-            player.continuousRecording.record(continuousRecording.checked);
-            updateRangeControls();
-
             eventRecording.removeAttribute('disabled');
             set_live.removeAttribute('disabled');
         }
@@ -367,7 +305,6 @@ To activate key, please, use the activation application that is placed:
         });
 
         window.addEventListener('unload', function() {
-            player.continuousRecording.record(false);
             player.eventRecording.record(false);
         });
 
